@@ -1,0 +1,170 @@
+version: '3.8'
+
+services:
+  user:
+    build:
+      context: ./user
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user.rule=Host(`user.localhost`)"
+      - "traefik.http.services.user.loadbalancer.server.port=8080"
+    deploy:
+      replicas: 2
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://user-db:3306/users
+      SPRING_DATASOURCE_USERNAME: sebik123
+      SPRING_DATASOURCE_PASSWORD: 1234bitaR!1234
+    depends_on:
+      - user-db
+
+  device:
+    build:
+      context: ./device
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.device.rule=Host(`device.localhost`)"
+      - "traefik.http.services.device.loadbalancer.server.port=8081"
+    deploy:
+      replicas: 2
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://device-db:3306/devices
+      SPRING_DATASOURCE_USERNAME: sebik123
+      SPRING_DATASOURCE_PASSWORD: 1234bitaR!1234
+    depends_on:
+      - device-db
+      - rabbitmq
+
+  consumption:
+    build:
+      context: ./microservice
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.consumption.rule=Host(`consumption.localhost`)"
+      - "traefik.http.services.consumption.loadbalancer.server.port=8087"
+    deploy:
+      replicas: 2
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://consumption-db:3306/device_measurements
+      SPRING_DATASOURCE_USERNAME: sebik123
+      SPRING_DATASOURCE_PASSWORD: 1234bitaR!1234
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    depends_on:
+      - consumption-db
+      - rabbitmq
+      - redis
+
+  chat:
+    build:
+      context: ./chat
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chat.rule=Host(`chat.localhost`)"
+      - "traefik.http.services.chat.loadbalancer.server.port=8089"
+      - "traefik.http.routers.chat.entrypoints=web"
+      - "traefik.http.middlewares.websocket-headers.headers.customResponseHeaders.X-Frame-Options=DENY"
+      - "traefik.http.routers.chat.middlewares=websocket-headers"
+    deploy:
+      replicas: 2
+
+  user-db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234bitaR!1234
+      MYSQL_DATABASE: users
+      MYSQL_USER: sebik123
+      MYSQL_PASSWORD: 1234bitaR!1234
+    ports:
+      - "3307:3306"
+    volumes:
+      - user-db-data:/var/lib/mysql
+
+  device-db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234bitaR!1234
+      MYSQL_DATABASE: devices
+      MYSQL_USER: sebik123
+      MYSQL_PASSWORD: 1234bitaR!1234
+    ports:
+      - "3308:3306"
+    volumes:
+      - device-db-data:/var/lib/mysql
+  
+  consumption-db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234bitaR!1234
+      MYSQL_DATABASE: device_measurements
+      MYSQL_USER: sebik123
+      MYSQL_PASSWORD: 1234bitaR!1234
+    ports:
+      - "3309:3306"
+    volumes:
+      - microservice-db-data:/var/lib/mysql
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: always
+    
+  userdevicesfrontend:
+    build:
+      context: ./userdevicesfrontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - user
+      - device
+      - consumption
+    volumes:
+      - ./frontend/src:/usr/src/app/src
+      - /usr/src/app/node_modules      
+    environment:
+      NODE_ENV: development
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  reverse-proxy:
+    image: traefik:v3.2
+    command:
+      - --api.insecure=true
+      - --providers.docker
+      - --accesslog=true
+      - --accesslog.filepath=/var/log/traefik/access.log
+      - --log.level=DEBUG
+      - --entrypoints.web.address=:80
+      - --entrypoints.dashboard.address=:8085
+    ports:
+      - "80:80"
+      - "8085:8085"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - traefik_logs:/var/log/traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`localhost`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=dashboard"
+      - "traefik.http.services.traefik-dashboard.loadbalancer.server.port=8080"
+
+volumes:
+  user-db-data:
+  device-db-data:
+  microservice-db-data:
+  traefik_logs:
+  redis-data:

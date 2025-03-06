@@ -1,0 +1,40 @@
+.custom-navbar {
+    background-color: #0978e0;
+    color: white;
+    padding: 10px 20px;
+}
+
+.custom-navbar .navbar-brand {
+    color: white;
+}
+
+.custom-navbar .nav-link {
+    color: white;
+    transition: color 0.3s ease;
+    display: flex;
+    /* Use flexbox for alignment */
+    align-items: center;
+    /* Vertically center the items */
+}
+
+.custom-navbar .nav-link .icon {
+    margin-right: 8px;
+    /* Add space between icon and text */
+}
+
+.custom-navbar .nav-link:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+.logout-link {
+    margin-left: auto;
+    /* Push logout to the right */
+    color: white;
+    cursor: pointer;
+}
+
+.logout-link:hover {
+    color: #ff4d4f;
+    /* Change color on hover */
+}

@@ -1,0 +1,46 @@
+.profile-container {
+    width: 320px;
+    height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    gap: 10px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: transform 0.3s ease;
+}
+
+.profile-container:hover {
+    transform: translate(-50%, -50%) translateY(-5px);
+}
+
+.profile-icon {
+    width: 80px;
+    height: 80px;
+    background-color: #007bff;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.profile-info h3,
+.profile-info p,
+.information p {
+    margin: 5px 0;
+    text-align: center;
+}
+
+.information p strong {
+    color: #333;
+}
